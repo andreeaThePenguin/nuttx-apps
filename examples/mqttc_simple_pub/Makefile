@@ -27,6 +27,6 @@ MODULE = $(CONFIG_EXAMPLES_MQTTC)
 
 # MQTT-C example source code
 
-MAINSRC = mqttc_pub.c
+MAINSRC = mqttc_simple_pub.c
 
 include $(APPDIR)/Application.mk

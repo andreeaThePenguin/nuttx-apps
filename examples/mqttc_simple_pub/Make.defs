@@ -19,5 +19,5 @@
 ############################################################################
 
 ifneq ($(CONFIG_EXAMPLES_MQTTC),)
-CONFIGURED_APPS += $(APPDIR)/examples/mqttc
+CONFIGURED_APPS += $(APPDIR)/examples/mqttc_simple_pub
 endif

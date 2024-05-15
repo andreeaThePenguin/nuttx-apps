@@ -27,5 +27,5 @@ if(CONFIG_EXAMPLES_MQTTC)
     MODULE
     ${CONFIG_EXAMPLES_MQTTC}
     SRCS
-    mqttc_pub.c)
+    mqttc_simple_pub.c)
 endif()
