@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <mbedtls/build_info.h>
+#include <mbedtls/platform.h>
 #include <mbedtls/error.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
@@ -16,6 +18,7 @@
 /* compat for older mbedtls */
 #define	MBEDTLS_NET_POLL_READ	1
 #define	MBEDTLS_NET_POLL_WRITE	1
+
 
 int
 mbedtls_net_poll(mbedtls_net_context * ctx, uint32_t rw, uint32_t timeout)
@@ -77,6 +80,8 @@ void open_nb_socket(struct mbedtls_context *ctx,
 
     mbedtls_entropy_init(entropy);
     mbedtls_ctr_drbg_init(ctr_drbg);
+
+
     rv = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func, entropy,
                                additional, additional_len);
     if (rv != 0) {

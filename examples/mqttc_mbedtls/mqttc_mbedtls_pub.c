@@ -8,6 +8,13 @@
 #include <mqtt.h>
 #include "templates/mbedtls_sockets.h"
 
+#if !defined(MBEDTLS_CTR_DRBG_C) || !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_FS_IO)
+int main(void)
+{
+    printf("MBEDTLS_CTR_DRBG_C and/or MBEDTLS_ENTROPY_C and/or MBEDTLS_FS_IO not defined.\n");
+    // mbedtls_exit(0);
+}
+#else
 
 /**
  * @brief The function that would be called whenever a PUBLISH is received.
@@ -194,3 +201,5 @@ void* client_refresher(void* client)
     }
     return NULL;
 }
+
+#endif /* MBEDTLS_CTR_DRBG_C && MBEDTLS_ENTROPY_C && MBEDTLS_FS_IO */
