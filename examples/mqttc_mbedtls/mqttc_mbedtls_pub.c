@@ -31,7 +31,7 @@ void publish_callback(void** unused, struct mqtt_response_publish *published);
  *       \ref __mqtt_send every so often. I've picked 100 ms meaning that 
  *       client ingress/egress traffic will be handled every 100 ms.
  */
-void* client_refresher(void* client);
+static FAR void* client_refresher(FAR void* client);
 
 /**
  * @brief Safelty closes the \p sockfd and cancels the \p client_daemon before \c exit. 
@@ -46,9 +46,10 @@ int main(int argc, const char *argv[])
     const char* addr;
     const char* port;
     const char* topic;
+    // const char* ca_file = "isrgrootx1.pem";
     /* Prototype ca_file for hivemq broker. TODO change to file on board. */
-    const char* ca_file =
-    "-----BEGIN CERTIFICATE-----\
+    const unsigned char* ca_file =
+    (unsigned char*)"-----BEGIN CERTIFICATE-----\n\
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\
 cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4\
@@ -78,8 +79,7 @@ oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq\
 4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA\
 mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d\
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\
------END CERTIFICATE-----\
-";
+-----END CERTIFICATE-----\n";
 
     struct mbedtls_context ctx;
     mqtt_pal_socket_handle sockfd;
@@ -123,8 +123,8 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\
 
     /* setup a client */
     struct mqtt_client client;
-    uint8_t sendbuf[2048]; /* sendbuf should be large enough to hold multiple whole mqtt messages */
-    uint8_t recvbuf[1024]; /* recvbuf should be large enough any whole mqtt message expected to be received */
+    uint8_t sendbuf[CONFIG_EXAMPLES_MQTTC_MBEDTLS_TXSIZE]; /* sendbuf should be large enough to hold multiple whole mqtt messages */
+    uint8_t recvbuf[CONFIG_EXAMPLES_MQTTC_MBEDTLS_RXSIZE]; /* recvbuf should be large enough any whole mqtt message expected to be received */
     mqtt_init(&client, sockfd, sendbuf, sizeof(sendbuf), recvbuf, sizeof(recvbuf), publish_callback);
     mqtt_connect(&client, "publishing_client", NULL, NULL, 0, NULL, NULL, 0, 400);
 
@@ -192,11 +192,11 @@ void publish_callback(void** unused, struct mqtt_response_publish *published)
     /* not used in this example */
 }
 
-void* client_refresher(void* client)
+void* client_refresher(FAR void* client)
 {
     while(1) 
     {
-        mqtt_sync((struct mqtt_client*) client);
+        mqtt_sync((FAR struct mqtt_client*) client);
         usleep(100000U);
     }
     return NULL;
