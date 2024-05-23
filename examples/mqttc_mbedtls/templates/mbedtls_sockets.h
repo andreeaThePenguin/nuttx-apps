@@ -43,7 +43,7 @@ void cert_verify_failed(uint32_t rv);
 void open_nb_socket(struct mbedtls_context *ctx,
                     const char *hostname,
                     const char *port,
-                    const char *ca_file);
+                    const unsigned char *ca_file);
 
 
 void failed(const char *fn, int rv) {
@@ -66,7 +66,7 @@ void cert_verify_failed(uint32_t rv) {
 void open_nb_socket(struct mbedtls_context *ctx,
                     const char *hostname,
                     const char *port,
-                    const char *ca_file) {
+                    const unsigned char *ca_file) {
     const unsigned char *additional = (const unsigned char *)"MQTT-C";
     size_t additional_len = 6;
     int rv;
@@ -81,7 +81,6 @@ void open_nb_socket(struct mbedtls_context *ctx,
     mbedtls_entropy_init(entropy);
     mbedtls_ctr_drbg_init(ctr_drbg);
 
-
     rv = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func, entropy,
                                additional, additional_len);
     if (rv != 0) {
@@ -89,9 +88,9 @@ void open_nb_socket(struct mbedtls_context *ctx,
     }
 
     mbedtls_x509_crt_init(ca_crt);
-    rv = mbedtls_x509_crt_parse_file(ca_crt, ca_file);
+    rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen(ca_file) + 1);
     if (rv != 0) {
-        failed("mbedtls_x509_crt_parse_file", rv);
+        failed("mbedtls_x509_crt_parse", rv);
     }
 
     mbedtls_ssl_config_init(ssl_conf);
