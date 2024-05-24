@@ -23,7 +23,6 @@
 int
 mbedtls_net_poll(mbedtls_net_context * ctx, uint32_t rw, uint32_t timeout)
 {
-	/* XXX this is not ideal but good enough for an example */
 	usleep(300);
 	return 1;
 }
@@ -56,9 +55,8 @@ void failed(const char *fn, int rv) {
 void cert_verify_failed(uint32_t rv) {
     char buf[512];
     mbedtls_x509_crt_verify_info(buf, sizeof(buf), "\t", rv);
-    printf("Certificate verification failed (%0" PRIx32 ")\n%s\n", rv, buf);
-    exit(1);
-}
+    printf("Certificate verification failed (%0" PRIx32 ")\n%s\nContinuing without a valid certificate\n", rv, buf);
+}  
 
 /*
     A template for opening a non-blocking mbed TLS connection.
