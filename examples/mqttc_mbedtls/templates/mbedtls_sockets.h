@@ -1,32 +1,44 @@
-#if !defined(__MBEDTLS_SOCKET_TEMPLATE_H__)
-#define __MBEDTLS_SOCKET_TEMPLATE_H__
+/****************************************************************************
+ * apps/examples/mqttc_mbedtls/templates/mbedtls_sockets.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#if !defined(MQTTC_MBEDTLS_SOCKET_TEMPLATE_H)
+#define MQTTC_MBEDTLS_SOCKET_TEMPLATE_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <mbedtls/build_info.h>
-#include <mbedtls/platform.h>
 #include <mbedtls/error.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 
-#if !defined(MBEDTLS_NET_POLL_READ)
-/* compat for older mbedtls */
-#define	MBEDTLS_NET_POLL_READ	1
-#define	MBEDTLS_NET_POLL_WRITE	1
-
-
-int
-mbedtls_net_poll(mbedtls_net_context * ctx, uint32_t rw, uint32_t timeout)
-{
-	usleep(300);
-	return 1;
-}
-#endif
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 
 struct mbedtls_context {
     mbedtls_net_context net_ctx;
@@ -37,35 +49,73 @@ struct mbedtls_context {
     mbedtls_ctr_drbg_context ctr_drbg;
 };
 
-void failed(const char *fn, int rv);
-void cert_verify_failed(uint32_t rv);
-void open_nb_socket(struct mbedtls_context *ctx,
-                    const char *hostname,
-                    const char *port,
-                    const unsigned char *ca_file);
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
+static void failed(const char *fn, int rv);
+static void cert_verify_failed(uint32_t rv);
 
-void failed(const char *fn, int rv) {
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: failed
+ *
+ * Description:
+ *   Facilitates error display for mbedtls functions
+ *
+ ****************************************************************************/
+
+static void failed(const char *fn, int rv) {
     char buf[100];
     mbedtls_strerror(rv, buf, sizeof(buf));
     printf("%s failed with %x (%s)\n", fn, -rv, buf);
     exit(1);
 }
 
-void cert_verify_failed(uint32_t rv) {
+/****************************************************************************
+ * Name: failed
+ *
+ * Description:
+ *   Facilitates display of the reason why a certificate verification
+ *   failed
+ *
+ ****************************************************************************/
+
+static void cert_verify_failed(uint32_t rv) {
     char buf[512];
     mbedtls_x509_crt_verify_info(buf, sizeof(buf), "\t", rv);
     printf("Certificate verification failed (%0" PRIx32 ")\n%s\nContinuing without a valid certificate\n", rv, buf);
 }  
 
-/*
-    A template for opening a non-blocking mbed TLS connection.
-*/
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+void open_nb_socket(struct mbedtls_context *ctx,
+                    const char *hostname,
+                    const char *port,
+                    const unsigned char *ca_file);
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: open_nb_socket
+ *
+ * Description:
+ *   Opens a non-blocking mbed TLS connection
+ *
+ ****************************************************************************/
+
 void open_nb_socket(struct mbedtls_context *ctx,
                     const char *hostname,
                     const char *port,
                     const unsigned char *ca_file) {
-    const unsigned char *additional = (const unsigned char *)"MQTT-C";
+    const unsigned char *additional = (const unsigned char *)"RANDOM";
     size_t additional_len = 6;
     int rv;
 
@@ -86,7 +136,7 @@ void open_nb_socket(struct mbedtls_context *ctx,
     }
 
     mbedtls_x509_crt_init(ca_crt);
-    rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen(ca_file) + 1);
+    rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen((const char*)ca_file) + 1);
     if (rv != 0) {
         failed("mbedtls_x509_crt_parse", rv);
     }
@@ -134,10 +184,6 @@ void open_nb_socket(struct mbedtls_context *ctx,
         } else {
             break;
         }
-        rv = mbedtls_net_poll(net_ctx, want, (uint32_t)-1);
-        if (rv < 0) {
-            failed("mbedtls_net_poll", rv);
-        }
     }
     if (rv != 0) {
         failed("mbedtls_ssl_handshake", rv);
@@ -152,4 +198,4 @@ void open_nb_socket(struct mbedtls_context *ctx,
     }
 }
 
-#endif
+#endif /* MQTTC_MBEDTLS_SOCKET_TEMPLATE_H */

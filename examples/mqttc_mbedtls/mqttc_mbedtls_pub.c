@@ -1,6 +1,27 @@
-/**
- * @file
- */
+/****************************************************************************
+ * apps/examples/mqttc_mbedtls/mqttc_mbedtls_pub.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,46 +29,75 @@
 #include <mqtt.h>
 #include "templates/mbedtls_sockets.h"
 
-#if !defined(MBEDTLS_CTR_DRBG_C) || !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_FS_IO)
-int main(void)
-{
-    printf("MBEDTLS_CTR_DRBG_C and/or MBEDTLS_ENTROPY_C and/or MBEDTLS_FS_IO not defined.\n");
-    // mbedtls_exit(0);
-}
-#else
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
-/**
- * @brief The function that would be called whenever a PUBLISH is received.
- * 
- * @note This function is not used in this example. 
- */
-void publish_callback(void** unused, struct mqtt_response_publish *published);
-
-/**
- * @brief The client's refresher. This function triggers back-end routines to 
- *        handle ingress/egress traffic to the broker.
- * 
- * @note All this function needs to do is call \ref __mqtt_recv and 
- *       \ref __mqtt_send every so often. I've picked 100 ms meaning that 
- *       client ingress/egress traffic will be handled every 100 ms.
- */
 static FAR void* client_refresher(FAR void* client);
+static void publish_callback(void** unused, struct mqtt_response_publish *published);
+static void safe_exit(int status, mqtt_pal_socket_handle sockfd, pthread_t *client_daemon);
 
-/**
- * @brief Safelty closes the \p sockfd and cancels the \p client_daemon before \c exit. 
- */
-void exit_example(int status, mqtt_pal_socket_handle sockfd, pthread_t *client_daemon);
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
-/**
- * A simple program to that publishes the current time whenever ENTER is pressed. 
- */
+/****************************************************************************
+ * Name: client_refresher
+ *
+ * Description:
+ *   The client's refresher. This function triggers back-end routines to
+ *   handle ingress/egress traffic to the broker.
+ *
+ ****************************************************************************/
+
+static FAR void* client_refresher(FAR void* client)
+{
+    while(1) 
+    {
+        mqtt_sync((FAR struct mqtt_client*) client);
+        usleep(100000U);
+    }
+    return NULL;
+}
+
+/****************************************************************************
+ * Name: publish_callback
+ *
+ * Description:
+ *   This function would be called whenever a PUBLISH is received.
+ *   In this example it is empty.
+ *
+ ****************************************************************************/
+static void publish_callback(void** unused, struct mqtt_response_publish *published) 
+{
+
+}
+
+/****************************************************************************
+ * Name: safe_exit
+ *
+ * Description:
+ *   Safely closes the sockfd and cancels the client_daemon before exit.
+ *
+ ****************************************************************************/
+static void safe_exit(int status, mqtt_pal_socket_handle sockfd, pthread_t *client_daemon)
+{
+    if (client_daemon != NULL) pthread_cancel(*client_daemon);
+    mbedtls_ssl_free(sockfd);
+    /* XXX free the rest of contexts */
+    exit(status);
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
 int main(int argc, const char *argv[]) 
 {
     const char* addr;
     const char* port;
     const char* topic;
-    // const char* ca_file = "isrgrootx1.pem";
-    /* Prototype ca_file for hivemq broker. TODO change to file on board. */
+    /* Just an example ca_file */
     const unsigned char* ca_file =
     (unsigned char*)"-----BEGIN CERTIFICATE-----\n\
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\
@@ -118,27 +168,27 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\
     sockfd = &ctx.ssl_ctx;
 
     if (sockfd == NULL) {
-        exit_example(EXIT_FAILURE, sockfd, NULL);
+        safe_exit(EXIT_FAILURE, sockfd, NULL);
     }
 
     /* setup a client */
     struct mqtt_client client;
-    uint8_t sendbuf[CONFIG_EXAMPLES_MQTTC_MBEDTLS_TXSIZE]; /* sendbuf should be large enough to hold multiple whole mqtt messages */
-    uint8_t recvbuf[CONFIG_EXAMPLES_MQTTC_MBEDTLS_RXSIZE]; /* recvbuf should be large enough any whole mqtt message expected to be received */
+    uint8_t sendbuf[CONFIG_EXAMPLES_MQTTC_MBEDTLS_TXSIZE];
+    uint8_t recvbuf[CONFIG_EXAMPLES_MQTTC_MBEDTLS_RXSIZE];
     mqtt_init(&client, sockfd, sendbuf, sizeof(sendbuf), recvbuf, sizeof(recvbuf), publish_callback);
     mqtt_connect(&client, "publishing_client", NULL, NULL, 0, NULL, NULL, 0, 400);
 
     /* check that we don't have any errors */
     if (client.error != MQTT_OK) {
         fprintf(stderr, "error: %s\n", mqtt_error_str(client.error));
-        exit_example(EXIT_FAILURE, sockfd, NULL);
+        safe_exit(EXIT_FAILURE, sockfd, NULL);
     }
 
     /* start a thread to refresh the client (handle egress and ingree client traffic) */
     pthread_t client_daemon;
     if(pthread_create(&client_daemon, NULL, client_refresher, &client)) {
         fprintf(stderr, "Failed to start client daemon.\n");
-        exit_example(EXIT_FAILURE, sockfd, NULL);
+        safe_exit(EXIT_FAILURE, sockfd, NULL);
 
     }
 
@@ -165,7 +215,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\
         /* check for errors */
         if (client.error != MQTT_OK) {
             fprintf(stderr, "error: %s\n", mqtt_error_str(client.error));
-            exit_example(EXIT_FAILURE, sockfd, &client_daemon);
+            safe_exit(EXIT_FAILURE, sockfd, &client_daemon);
         }
     }   
 
@@ -174,32 +224,6 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\
     sleep(1);
 
     /* exit */ 
-    exit_example(EXIT_SUCCESS, sockfd, &client_daemon);
+    safe_exit(EXIT_SUCCESS, sockfd, &client_daemon);
+    return EXIT_SUCCESS;
 }
-
-void exit_example(int status, mqtt_pal_socket_handle sockfd, pthread_t *client_daemon)
-{
-    if (client_daemon != NULL) pthread_cancel(*client_daemon);
-    mbedtls_ssl_free(sockfd);
-    /* XXX free the rest of contexts */
-    exit(status);
-}
-
-
-
-void publish_callback(void** unused, struct mqtt_response_publish *published) 
-{
-    /* not used in this example */
-}
-
-void* client_refresher(FAR void* client)
-{
-    while(1) 
-    {
-        mqtt_sync((FAR struct mqtt_client*) client);
-        usleep(100000U);
-    }
-    return NULL;
-}
-
-#endif /* MBEDTLS_CTR_DRBG_C && MBEDTLS_ENTROPY_C && MBEDTLS_FS_IO */
