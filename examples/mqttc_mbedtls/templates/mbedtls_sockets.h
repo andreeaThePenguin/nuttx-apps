@@ -17,8 +17,11 @@
  * under the License.
  *
  ****************************************************************************/
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
-#if !defined(MQTTC_MBEDTLS_SOCKET_TEMPLATE_H)
+#ifndef MQTTC_MBEDTLS_SOCKET_TEMPLATE_H
 #define MQTTC_MBEDTLS_SOCKET_TEMPLATE_H
 
 /****************************************************************************
@@ -39,6 +42,9 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 
 struct mbedtls_context {
     mbedtls_net_context net_ctx;
@@ -55,6 +61,10 @@ struct mbedtls_context {
 
 static void failed(const char *fn, int rv);
 static void cert_verify_failed(uint32_t rv);
+static void open_nb_socket(struct mbedtls_context *ctx,
+                    const char *hostname,
+                    const char *port,
+                    const unsigned char *ca_file);
 
 /****************************************************************************
  * Private Functions
@@ -76,7 +86,7 @@ static void failed(const char *fn, int rv) {
 }
 
 /****************************************************************************
- * Name: failed
+ * Name: cert_verify_failed
  *
  * Description:
  *   Facilitates display of the reason why a certificate verification
@@ -91,19 +101,6 @@ static void cert_verify_failed(uint32_t rv) {
 }  
 
 /****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-void open_nb_socket(struct mbedtls_context *ctx,
-                    const char *hostname,
-                    const char *port,
-                    const unsigned char *ca_file);
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Name: open_nb_socket
  *
  * Description:
@@ -111,10 +108,11 @@ void open_nb_socket(struct mbedtls_context *ctx,
  *
  ****************************************************************************/
 
-void open_nb_socket(struct mbedtls_context *ctx,
+static void open_nb_socket(struct mbedtls_context *ctx,
                     const char *hostname,
                     const char *port,
                     const unsigned char *ca_file) {
+    const unsigned char *additional = (const unsigned char *)"RANDOM";
     const unsigned char *additional = (const unsigned char *)"RANDOM";
     size_t additional_len = 6;
     int rv;
@@ -136,6 +134,7 @@ void open_nb_socket(struct mbedtls_context *ctx,
     }
 
     mbedtls_x509_crt_init(ca_crt);
+    rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen((const char*)ca_file) + 1);
     rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen((const char*)ca_file) + 1);
     if (rv != 0) {
         failed("mbedtls_x509_crt_parse", rv);
@@ -198,4 +197,5 @@ void open_nb_socket(struct mbedtls_context *ctx,
     }
 }
 
+#endif /* MQTTC_MBEDTLS_SOCKET_TEMPLATE_H */
 #endif /* MQTTC_MBEDTLS_SOCKET_TEMPLATE_H */
