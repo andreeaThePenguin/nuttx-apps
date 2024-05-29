@@ -110,7 +110,6 @@ static void open_nb_socket(struct mbedtls_context *ctx,
                     const char *port,
                     const unsigned char *ca_file) {
     const unsigned char *additional = (const unsigned char *)"RANDOM";
-    const unsigned char *additional = (const unsigned char *)"RANDOM";
     size_t additional_len = 6;
     int rv;
 
@@ -194,5 +193,4 @@ static void open_nb_socket(struct mbedtls_context *ctx,
     }
 }
 
-#endif /* MQTTC_MBEDTLS_SOCKET_TEMPLATE_H */
 #endif /* MQTTC_MBEDTLS_SOCKET_TEMPLATE_H */
