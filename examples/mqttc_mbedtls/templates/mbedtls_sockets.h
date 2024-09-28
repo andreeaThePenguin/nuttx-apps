@@ -61,7 +61,7 @@ static void cert_verify_failed(uint32_t rv);
 static void open_nb_socket(struct mbedtls_context *ctx,
                     const char *hostname,
                     const char *port,
-                    const unsigned char *ca_file);
+                    const char *ca_file);
 
 /****************************************************************************
  * Private Functions
@@ -108,7 +108,7 @@ static void cert_verify_failed(uint32_t rv) {
 static void open_nb_socket(struct mbedtls_context *ctx,
                     const char *hostname,
                     const char *port,
-                    const unsigned char *ca_file) {
+                    const char *ca_file) {
     const unsigned char *additional = (const unsigned char *)"RANDOM";
     size_t additional_len = 6;
     int rv;
@@ -130,8 +130,8 @@ static void open_nb_socket(struct mbedtls_context *ctx,
     }
 
     mbedtls_x509_crt_init(ca_crt);
-    rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen((const char*)ca_file) + 1);
-    rv = mbedtls_x509_crt_parse(ca_crt, ca_file, strlen((const char*)ca_file) + 1);
+    rv = mbedtls_x509_crt_parse(ca_crt, (const unsigned char*)ca_file, strlen(ca_file) + 1);
+    rv = mbedtls_x509_crt_parse(ca_crt, (const unsigned char*)ca_file, strlen(ca_file) + 1);
     if (rv != 0) {
         failed("mbedtls_x509_crt_parse", rv);
     }

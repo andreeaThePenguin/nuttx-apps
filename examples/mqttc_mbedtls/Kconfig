@@ -5,7 +5,7 @@
 
 config EXAMPLES_MQTTC_MBEDTLS
 	tristate "Enable MQTT-C Example with MbedTLS support"
-	default y
+	default n
 	depends on NETUTILS_MQTTC_WITH_MBEDTLS
 	---help---
 		Enable a MQTT-C publisher example with MbedTLS support
