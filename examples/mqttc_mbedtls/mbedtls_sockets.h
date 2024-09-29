@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/examples/mqttc_mbedtls/templates/mbedtls_sockets.c
+ * apps/examples/mqttc_mbedtls/mbedtls_sockets.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,8 +21,8 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef MQTTC_MBEDTLS_SOCKET_TEMPLATE_H
-#define MQTTC_MBEDTLS_SOCKET_TEMPLATE_H
+#ifndef MQTTC_MBEDTLS_SOCKET_H
+#define MQTTC_MBEDTLS_SOCKET_H
 
 /****************************************************************************
  * Included Files
@@ -193,4 +193,4 @@ static void open_nb_socket(struct mbedtls_context *ctx,
     }
 }
 
-#endif /* MQTTC_MBEDTLS_SOCKET_TEMPLATE_H */
+#endif /* MQTTC_MBEDTLS_SOCKET_H */

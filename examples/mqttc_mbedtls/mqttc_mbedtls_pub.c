@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #include <mqtt.h>
-#include "templates/mbedtls_sockets.h"
+#include "mbedtls_sockets.h"
 
 /****************************************************************************
  * Private Function Prototypes
