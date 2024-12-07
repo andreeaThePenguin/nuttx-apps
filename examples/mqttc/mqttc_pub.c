@@ -22,6 +22,14 @@
  * Included Files
  ****************************************************************************/
 
+/**
+ * @TODO: (3) Add the missing header files from apps/examples/ltr308_main.c
+ *
+ *
+ */
+
+/* ********************************************************************** */
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -62,10 +70,36 @@ static FAR void *client_refresher(FAR void *data);
 static void parsearg(int argc, FAR char *argv[], FAR struct mqttc_cfg_s *cfg,
                      FAR int *n);
 static int initserver(FAR const struct mqttc_cfg_s *cfg);
+static int get_light(int *timestamp, float *lux);
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: get_light
+ *
+ * Description:
+ *   This function gets data (timestamp and measures light intensity - in lux)
+ *   from the LTR308 sensor.
+ *
+ *
+ ****************************************************************************/
+
+static int get_light(int *timestamp, float *lux)
+{
+  /**
+   * @TODO: (3) Complete this function with the example from apps/examples/ltr308_main.c
+   *
+   * Tip: Before the function returns, assign the retrieved values to the function parameters,
+   * by uncommenting the lines below.
+   */
+
+  // *timestamp = light.timestamp;
+  // *lux = light.light;
+
+  /* ********************************************************************** */
+}
 
 /****************************************************************************
  * Name: client_refresher
@@ -79,10 +113,10 @@ static int initserver(FAR const struct mqttc_cfg_s *cfg);
 static FAR void *client_refresher(FAR void *data)
 {
   while (1)
-    {
-      mqtt_sync((FAR struct mqtt_client *)data);
-      usleep(100000U);
-    }
+  {
+    mqtt_sync((FAR struct mqtt_client *)data);
+    usleep(100000U);
+  }
 
   return NULL;
 }
@@ -101,49 +135,49 @@ static void parsearg(int argc, FAR char *argv[],
   int opt;
 
   while ((opt = getopt(argc, argv, "h:p:m:t:n:q:")) != ERROR)
+  {
+    switch (opt)
     {
-      switch (opt)
-        {
-          case 'h':
-            cfg->host = optarg;
-            break;
+    case 'h':
+      cfg->host = optarg;
+      break;
 
-          case 'p':
-            cfg->port = optarg;
-            break;
+    case 'p':
+      cfg->port = optarg;
+      break;
 
-          case 'm':
-            cfg->msg = optarg;
-            break;
+    case 'm':
+      cfg->msg = optarg;
+      break;
 
-          case 't':
-            cfg->topic = optarg;
-            break;
+    case 't':
+      cfg->topic = optarg;
+      break;
 
-          case 'n':
-            *n = strtol(optarg, NULL, 10);
-            break;
+    case 'n':
+      *n = strtol(optarg, NULL, 10);
+      break;
 
-          case 'q':
-            switch (strtol(optarg, NULL, 10))
-            {
-              case '0':
-                cfg->qos = MQTT_PUBLISH_QOS_0;
-                break;
-              case '1':
-                cfg->qos = MQTT_PUBLISH_QOS_1;
-                break;
-              case '2':
-                cfg->qos = MQTT_PUBLISH_QOS_2;
-                break;
-            }
-            break;
+    case 'q':
+      switch (strtol(optarg, NULL, 10))
+      {
+      case '0':
+        cfg->qos = MQTT_PUBLISH_QOS_0;
+        break;
+      case '1':
+        cfg->qos = MQTT_PUBLISH_QOS_1;
+        break;
+      case '2':
+        cfg->qos = MQTT_PUBLISH_QOS_2;
+        break;
+      }
+      break;
 
-          default:
-            fprintf(stderr, "ERROR: Unrecognized option\n");
-            break;
-        }
+    default:
+      fprintf(stderr, "ERROR: Unrecognized option\n");
+      break;
     }
+  }
 }
 
 /****************************************************************************
@@ -163,59 +197,58 @@ static int initserver(FAR const struct mqttc_cfg_s *cfg)
   int ret;
 
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family  = AF_INET;
+  hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
   printf("Connecting to %s:%s...\n", cfg->host, cfg->port);
 
   ret = getaddrinfo(cfg->host, cfg->port, &hints, &servinfo);
   if (ret != OK)
-    {
-      printf("ERROR! getaddrinfo() failed: %s\n", gai_strerror(ret));
-      return -1;
-    }
+  {
+    printf("ERROR! getaddrinfo() failed: %s\n", gai_strerror(ret));
+    return -1;
+  }
 
   itr = servinfo;
   do
+  {
+    fd = socket(itr->ai_family, itr->ai_socktype, itr->ai_protocol);
+    if (fd < 0)
     {
-      fd = socket(itr->ai_family, itr->ai_socktype, itr->ai_protocol);
-      if (fd < 0)
-        {
-          continue;
-        }
-
-      ret = connect(fd, itr->ai_addr, itr->ai_addrlen);
-      if (ret == 0)
-        {
-          break;
-        }
-
-      close(fd);
-      fd = -1;
+      continue;
     }
-  while ((itr = itr->ai_next) != NULL);
+
+    ret = connect(fd, itr->ai_addr, itr->ai_addrlen);
+    if (ret == 0)
+    {
+      break;
+    }
+
+    close(fd);
+    fd = -1;
+  } while ((itr = itr->ai_next) != NULL);
 
   freeaddrinfo(servinfo);
 
   if (fd < 0)
-    {
-      printf("ERROR! Couldn't create socket\n");
-      return -1;
-    }
+  {
+    printf("ERROR! Couldn't create socket\n");
+    return -1;
+  }
 
   ret = fcntl(fd, F_GETFL, 0);
   if (ret < 0)
-    {
-      printf("ERROR! fcntl() F_GETFL failed, errno: %d\n", errno);
-      return -1;
-    }
+  {
+    printf("ERROR! fcntl() F_GETFL failed, errno: %d\n", errno);
+    return -1;
+  }
 
   ret = fcntl(fd, F_SETFL, ret | O_NONBLOCK);
   if (ret < 0)
-    {
-      printf("ERROR! fcntl() F_SETFL failed, errno: %d\n", errno);
-      return -1;
-    }
+  {
+    printf("ERROR! fcntl() F_SETFL failed, errno: %d\n", errno);
+    return -1;
+  }
 
   return fd;
 }
@@ -231,34 +264,38 @@ int main(int argc, FAR char *argv[])
   enum MQTTErrors mqtterr;
   pthread_t thrdid;
   int n = 1;
+  int timestamp = 0;
+  float lux = 0.0;
+  char str_lux[10];
+  int ret = -1;
   struct mqttc_cfg_s mqtt_cfg =
-    {
-      .host = "broker.hivemq.com",
-      .port = "1883",
-      .topic = "test",
-      .msg = "test",
-      .flags = MQTT_CONNECT_CLEAN_SESSION,
-      .tmo = 400,
-      .id = NULL,
-      .qos = MQTT_PUBLISH_QOS_0,
-    };
+      {
+          .host = "broker.hivemq.com",
+          .port = "1883",
+          .topic = "test",
+          .msg = "test",
+          .flags = MQTT_CONNECT_CLEAN_SESSION,
+          .tmo = 400,
+          .id = NULL,
+          .qos = MQTT_PUBLISH_QOS_0,
+      };
 
   parsearg(argc, argv, &mqtt_cfg, &n);
   sockfd = initserver(&mqtt_cfg);
   if (sockfd < 0)
-    {
-      return -1;
-    }
+  {
+    return -1;
+  }
 
   mqtterr = mqtt_init(&mqtt_cfg.client, sockfd,
                       mqtt_cfg.sendbuf, sizeof(mqtt_cfg.sendbuf),
                       mqtt_cfg.recvbuf, sizeof(mqtt_cfg.recvbuf),
                       NULL);
   if (mqtterr != MQTT_OK)
-    {
-      printf("ERRPR! mqtt_init() failed.\n");
-      goto err_with_socket;
-    }
+  {
+    printf("ERRPR! mqtt_init() failed.\n");
+    goto err_with_socket;
+  }
 
   mqtterr = mqtt_connect(&mqtt_cfg.client, mqtt_cfg.id,
                          NULL, /* Will topic */
@@ -269,73 +306,85 @@ int main(int argc, FAR char *argv[])
                          mqtt_cfg.flags, mqtt_cfg.tmo);
 
   if (mqtterr != MQTT_OK)
-    {
-      printf("ERROR! mqtt_connect() failed\n");
-      goto err_with_socket;
-    }
+  {
+    printf("ERROR! mqtt_connect() failed\n");
+    goto err_with_socket;
+  }
 
   if (mqtt_cfg.client.error != MQTT_OK)
-    {
-      printf("error: %s\n", mqtt_error_str(mqtt_cfg.client.error));
-      goto err_with_socket;
-    }
+  {
+    printf("error: %s\n", mqtt_error_str(mqtt_cfg.client.error));
+    goto err_with_socket;
+  }
   else
-    {
-      printf("Success: Connected to broker!\n");
-    }
+  {
+    printf("Success: Connected to broker!\n");
+  }
 
   /* Start a thread to refresh the client (handle egress and ingree client
    * traffic)
    */
 
   if (pthread_create(&thrdid, NULL, client_refresher, &mqtt_cfg.client))
-    {
-      printf("ERROR! pthread_create() failed.\n");
-      goto err_with_socket;
-    }
+  {
+    printf("ERROR! pthread_create() failed.\n");
+    goto err_with_socket;
+  }
 
   /* Wait for MQTT ACK or time-out */
 
   while (!mqtt_cfg.client.event_connect && --timeout > 0)
-    {
-     usleep(10000);
-    }
+  {
+    usleep(10000);
+  }
 
   if (timeout == 0)
+  {
+    goto err_with_thrd;
+  }
+
+  /* Retrieve data from LTR308 sensor */
+  ret = get_light(&timestamp, &lux);
+
+  if (ret != 0)
+  {
+    printf("ERROR! get_light() failed\n");
+  }
+
+  /* Convert data from float to char[] */
+  sprintf(str_lux, "%f", lux);
+
+  while (n--)
+  {
+    /* Publish sensor data */
+    mqtterr = mqtt_publish(&mqtt_cfg.client, mqtt_cfg.topic,
+                           str_lux, 10,
+                           mqtt_cfg.qos);
+    if (mqtterr != MQTT_OK)
     {
+      printf("ERROR! mqtt_publish() failed\n");
       goto err_with_thrd;
     }
 
-  while (n--)
+    if (mqtt_cfg.client.error != MQTT_OK)
     {
-      mqtterr = mqtt_publish(&mqtt_cfg.client, mqtt_cfg.topic,
-                             mqtt_cfg.msg, strlen(mqtt_cfg.msg),
-                             mqtt_cfg.qos);
-      if (mqtterr != MQTT_OK)
-        {
-          printf("ERROR! mqtt_publish() failed\n");
-          goto err_with_thrd;
-        }
-
-      if (mqtt_cfg.client.error != MQTT_OK)
-        {
-          printf("error: %s\n", mqtt_error_str(mqtt_cfg.client.error));
-          goto err_with_thrd;
-        }
-      else
-        {
-          printf("Success: Published to broker!\n");
-        }
-
-      sleep(5);
+      printf("error: %s\n", mqtt_error_str(mqtt_cfg.client.error));
+      goto err_with_thrd;
     }
+    else
+    {
+      printf("Success: Published to broker!\n");
+    }
+
+    sleep(5);
+  }
 
   printf("\nDisconnecting from %s\n\n", mqtt_cfg.host);
   mqtterr = mqtt_disconnect(&mqtt_cfg.client);
   if (mqtterr != MQTT_OK)
-    {
-      printf("ERROR! mqtt_disconnect() failed\n");
-    }
+  {
+    printf("ERROR! mqtt_disconnect() failed\n");
+  }
 
   /* Force sending the DISCONNECT, the thread will be canceled before getting
    * the chance to sync this last packet.
@@ -352,4 +401,3 @@ err_with_socket:
 
   return 0;
 }
-
